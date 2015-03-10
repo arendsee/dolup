@@ -46,15 +46,15 @@ def parser(argv=None):
         default=False
     )
     parser.add_argument(
+        '--cache',
+        help="Cache directory name",
+        default="uniprot-cache"
+    )
+    parser.add_argument(
         '--print_http',
         help="Print all HTTP request",
         action="store_true",
         default=False
-    )
-    parser.add_argument(
-        '--cache',
-        help="Cache directory name",
-        default="uniprot-cache"
     )
     args = parser.parse_args(argv)
     return(args)
