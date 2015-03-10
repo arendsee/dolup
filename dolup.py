@@ -48,7 +48,6 @@ def parser(argv=None):
     parser.add_argument(
         '--cache',
         help="Cache directory name",
-        default="uniprot-cache"
     )
     parser.add_argument(
         '--print_http',
