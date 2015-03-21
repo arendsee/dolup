@@ -10,10 +10,6 @@ import sys
 __version__ = '1.0'
 __prog__ = 'dolup'
 
-LIST_TEMPLATE = "http://www.uniprot.org/taxonomy/?query=ancestor:{}+{}&format=list"
-RET_TEMPLATE  = "http://www.uniprot.org/uniprot/?query=organism:{}+{}&format=fasta&include={}"
-TAB_TEMPLATE  = "http://www.uniprot.org/uniprot/?query=organism:{}+{}&format=tab&include={}&columns={}"
-
 def positive_int(i):
     i = int(i)
     if i < 0:
@@ -78,6 +74,11 @@ def prettyprint_http(response):
     for k,v in d.items():
         print("\t%s: %s" % (k,v), file=sys.stderr)
 
+def makeurl(db, arg):
+    argstr = '&'.join('%s=%s' % (k,v) for k,v in arg.items())
+    url = "http://www.uniprot.org/%s/?%s" % (db, argstr)
+    return(url)
+
 
 if __name__ == '__main__':
 
@@ -87,13 +88,13 @@ if __name__ == '__main__':
         httplib2.debuglevel = 1
 
     proteome = 'reference:yes' if args.reference else 'complete:yes'
-    keyword = 'keyword:1185' if args.reference else 'keyword:181'
     include = 'yes' if args.include_isoforms else 'no'
 
     h = httplib2.Http(args.cache)
 
-    list_url = LIST_TEMPLATE.format(args.top_taxid, proteome)
-    response, content = h.request(list_url)
+    par = {'query': 'ancestor:%s+%s' % (args.top_taxid, proteome),
+           'format': 'list'}
+    response, content = h.request(makeurl('taxonomy', par))
 
     if args.print_http:
         prettyprint_http(response)
@@ -104,13 +105,20 @@ if __name__ == '__main__':
         if args.retrieve_sequence or args.retrieve_annotations:
             if args.retrieve_annotations:
                 filename = '%s.tab' % taxid
-                url = TAB_TEMPLATE.format(taxid, keyword, include, ','.join(args.retrieve_annotations))
+                par = {'query':'organism:%s' % taxid,
+                       'format':'tab',
+                       'include':include,
+                       'columns':','.join(args.retrieve_annotations)}
             elif args.retrieve_sequence:
                 filename = '%s.faa' % taxid
-                url = RET_TEMPLATE.format(taxid, keyword, include)
+                par = {'query':'organism:%s' % taxid,
+                       'format':'fasta',
+                       'include':include}
             print("Retrieving %s" % filename, file=sys.stderr)
+            url = makeurl('uniprot', par)
             response, content = h.request(url)
             if args.print_http:
+                print("URL:%s" % url)
                 prettyprint_http(response)
             with open(filename, 'w') as f:
                 print(content.decode(), file=f)
