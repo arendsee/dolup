@@ -11,8 +11,8 @@ __version__ = '1.0'
 __prog__ = 'dolup'
 
 LIST_TEMPLATE = "http://www.uniprot.org/taxonomy/?query=ancestor:{}+{}&format=list"
-RET_TEMPLATE  = "http://www.uniprot.org/uniprot/?query=organism:{}+{}&format=fasta&include=yes"
-TAB_TEMPLATE  = "http://www.uniprot.org/uniprot/?query=organism:{}+{}&format=tab&include=yes&columns={}"
+RET_TEMPLATE  = "http://www.uniprot.org/uniprot/?query=organism:{}+{}&format=fasta&include={}"
+TAB_TEMPLATE  = "http://www.uniprot.org/uniprot/?query=organism:{}+{}&format=tab&include={}&columns={}"
 
 def positive_int(i):
     i = int(i)
@@ -55,6 +55,12 @@ def parser(argv=None):
         nargs='+'
     )
     parser.add_argument(
+        '-i', '--include-isoforms',
+        help='include protein isoforms',
+        action='store_true',
+        default=False
+    )
+    parser.add_argument(
         '--cache',
         help="Cache directory name",
     )
@@ -82,6 +88,7 @@ if __name__ == '__main__':
 
     proteome = 'reference:yes' if args.reference else 'complete:yes'
     keyword = 'keyword:1185' if args.reference else 'keyword:181'
+    include = 'yes' if args.include_isoforms else 'no'
 
     h = httplib2.Http(args.cache)
 
@@ -97,10 +104,10 @@ if __name__ == '__main__':
         if args.retrieve_sequence or args.retrieve_annotations:
             if args.retrieve_annotations:
                 filename = '%s.tab' % taxid
-                url = TAB_TEMPLATE.format(taxid, keyword, ','.join(args.retrieve_annotations))
+                url = TAB_TEMPLATE.format(taxid, keyword, include, ','.join(args.retrieve_annotations))
             elif args.retrieve_sequence:
                 filename = '%s.faa' % taxid
-                url = RET_TEMPLATE.format(taxid, keyword)
+                url = RET_TEMPLATE.format(taxid, keyword, include)
             print("Retrieving %s" % filename, file=sys.stderr)
             response, content = h.request(url)
             if args.print_http:
