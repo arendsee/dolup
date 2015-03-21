@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# For more information on the uniprot REST interface go here
+# http://www.uniprot.org/help/programmatic_access
+
 import argparse
 import httplib2
 import sys
@@ -9,6 +12,7 @@ __prog__ = 'dolup'
 
 LIST_TEMPLATE = "http://www.uniprot.org/taxonomy/?query=ancestor:{}+{}&format=list"
 RET_TEMPLATE  = "http://www.uniprot.org/uniprot/?query=organism:{}+{}&format=fasta&include=yes"
+TAB_TEMPLATE  = "http://www.uniprot.org/uniprot/?query=organism:{}+{}&format=tab&include=yes&columns={}"
 
 def positive_int(i):
     i = int(i)
@@ -34,7 +38,7 @@ def parser(argv=None):
         help='The taxon id of the ancestral node'
     )
     parser.add_argument(
-        '-d', '--download',
+        '-q', '--retrieve-sequence',
         help="download all proteome fasta files",
         action="store_true",
         default=False
@@ -44,6 +48,11 @@ def parser(argv=None):
         help="retrieve only reference proteomes",
         action="store_true",
         default=False
+    )
+    parser.add_argument(
+        '-a', '--retrieve-annotations',
+        help='download columns of data (write "--" after last column name)',
+        nargs='+'
     )
     parser.add_argument(
         '--cache',
@@ -85,10 +94,14 @@ if __name__ == '__main__':
     taxids = content.decode().strip().split("\n")
 
     for taxid in taxids:
-        if args.download:
-            filename = '%s.faa' % taxid
+        if args.retrieve_sequence or args.retrieve_annotations:
+            if args.retrieve_annotations:
+                filename = '%s.tab' % taxid
+                url = TAB_TEMPLATE.format(taxid, keyword, ','.join(args.retrieve_annotations))
+            elif args.retrieve_sequence:
+                filename = '%s.faa' % taxid
+                url = RET_TEMPLATE.format(taxid, keyword)
             print("Retrieving %s" % filename, file=sys.stderr)
-            url = RET_TEMPLATE.format(taxid, keyword)
             response, content = h.request(url)
             if args.print_http:
                 prettyprint_http(response)
